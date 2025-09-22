@@ -12,7 +12,7 @@ import RequireAdmin from './components/auth/RequireAdmin';
 import AdminDashboard from './Pages/AdminDashboard';
 import Error404 from './components/Error404';
 import Navbar from './components/Navbar';
-import Footer from './components/Footer';
+// import Footer from './components/Footer';
 import ScrollToTop from './components/ScrollToTop';
 import Feedback from "./Pages/Feedback";
 import About from './Pages/About';
@@ -206,7 +206,7 @@ const App = () => {
         </AnimatePresence>
       </main>
 
-      {!isAdminRoute && <Footer />}
+      {/* {!isAdminRoute && <Footer />} */}
 
     </>
   );

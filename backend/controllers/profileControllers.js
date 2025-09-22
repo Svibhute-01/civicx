@@ -1,4 +1,5 @@
-const User = require('../models/userModel.js');
+const User = require('../models/userModel.js'); // ✅ CORRECT
+
 const xss = require('xss');
 const { asyncHandler } = require('../utils/asyncHandler.js');
 const { uploadOnCloudinary } = require('../utils/cloudinary.js');
@@ -7,8 +8,8 @@ const { uploadOnCloudinary } = require('../utils/cloudinary.js');
 const getUserByClerkId = asyncHandler(async (req, res) => {
   const { clerkUserId } = req.params;
   
-  const user = await User.findByClerkId(clerkUserId);
-  
+  const user = await User.findOne({ clerkUserId }); // ✅ fixed
+
   if (!user) {
     return res.status(404).json({ error: 'User not found' });
   }
@@ -90,7 +91,7 @@ const createOrUpdateUserProfile = asyncHandler(async (req, res) => {
   }
 
   // Try to find existing user by Clerk ID
-  let user = await User.findByClerkId(clerkUserId);
+  let user = await User.findOne({ clerkUserId }); // ✅ fixed
 
   if (user) {
     // Update existing user
@@ -125,37 +126,39 @@ const createOrUpdateUserProfile = asyncHandler(async (req, res) => {
   });
 });
 
+// Upload and set user's profile picture
+const uploadProfilePicture = asyncHandler(async (req, res) => {
+  const { clerkUserId } = req.params;
+
+  if (!req.file) {
+    return res.status(400).json({ error: 'No file uploaded' });
+  }
+
+  const localFilePath = req.file.path;
+  const cloudinaryResponse = await uploadOnCloudinary(localFilePath);
+
+  if (!cloudinaryResponse) {
+    return res.status(500).json({ error: 'Failed to upload image' });
+  }
+
+  const imageUrl = cloudinaryResponse.secure_url;
+
+  const user = await User.findOneAndUpdate(
+    { clerkUserId },
+    { profilePictureUrl: imageUrl },
+    { new: true }
+  );
+
+  if (!user) {
+    return res.status(404).json({ error: 'User not found' });
+  }
+
+  return res.json({ profilePictureUrl: imageUrl });
+});
+
 module.exports = {
   getUserByClerkId,
   updateUserProfile,
   createOrUpdateUserProfile,
-  // Upload and set user's profile picture
-  uploadProfilePicture: asyncHandler(async (req, res) => {
-    const { clerkUserId } = req.params;
-
-    if (!req.file) {
-      return res.status(400).json({ error: 'No file uploaded' });
-    }
-
-    const localFilePath = req.file.path;
-    const cloudinaryResponse = await uploadOnCloudinary(localFilePath);
-
-    if (!cloudinaryResponse) {
-      return res.status(500).json({ error: 'Failed to upload image' });
-    }
-
-    const imageUrl = cloudinaryResponse.secure_url;
-
-    const user = await User.findOneAndUpdate(
-      { clerkUserId },
-      { profilePictureUrl: imageUrl },
-      { new: true }
-    );
-
-    if (!user) {
-      return res.status(404).json({ error: 'User not found' });
-    }
-
-    return res.json({ profilePictureUrl: imageUrl });
-  })
+  uploadProfilePicture
 };
